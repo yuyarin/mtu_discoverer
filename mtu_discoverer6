@@ -1,0 +1,59 @@
+#!/bin/sh
+
+PLATFORM=`uname -s`
+
+OPTION='-m'
+if test $PLATFORM = "Darwin"
+then
+	echo "Notice: This command will take a long time on Darwin"
+	OPTION=''
+fi
+
+if test -z $1
+then
+	echo "a tool to reveal MTU of the link for IPv4 by ICMP ping with binary search"
+	echo "usage: mtu_discoverer6 dst_addr [start_mtu=64 [end_mtu=1500] ]"
+	exit 1
+fi
+DST=$1
+
+ST=1200
+if test $# -gt 1
+then
+	ST=$2
+fi
+
+ED=1500
+if test $# -gt 2
+then
+	ED=$3
+fi
+
+x=`expr $ST + $ED`
+MTU=`expr $x / 2`
+LAST_MTU=$MTU
+
+while [ $MTU -ne $ED ];
+do
+	# IPv6 header 40 byte + ICMPv6 header 8 byte
+	SIZE=`expr $MTU - 48`
+	ping6 $OPTION -s $SIZE -c 1 $DST > /dev/null 2>&1
+	if test $? -eq 0
+	then
+		echo "$MTU OK"
+		ST=$MTU
+	else
+		echo "$MTU NG"
+		ED=$MTU
+	fi
+	LAST_MTU=$MTU
+	x=`expr $ST + $ED`
+	MTU=`expr $x / 2`
+	# MTU should be even number...
+	if test $MTU -eq $LAST_MTU
+	then
+		echo "MTU: $MTU"
+		exit
+	fi
+done
+

@@ -1,12 +1,5 @@
 #!/bin/sh
 
-if test -z $1
-then
-	echo "a tool to reveal MTU of the link for IPv4 by ICMP ping with binary search"
-	echo "usage: mtu_discoverer dst_addr [start_mtu=64 [end_mtu=1500] ]"
-	exit 1
-fi
-
 PLATFORM=`uname -s`
 
 if test $PLATFORM = "FreeBSD"
@@ -19,6 +12,12 @@ then
 	fi 
 fi
 
+if test -z $1
+then
+	echo "a tool to reveal MTU of the link for IPv4 by ICMP ping with binary search"
+	echo "usage: mtu_discoverer dst_addr [start_mtu=64 [end_mtu=1500] ]"
+	exit 1
+fi
 DST=$1
 
 ST=1280

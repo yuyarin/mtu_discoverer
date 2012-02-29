@@ -1,0 +1,61 @@
+#!/bin/sh
+
+if test -z $1
+then
+	echo "a tool to reveal MTU of the link for IPv4 by ICMP ping with binary search"
+	echo "usage: mtu_discoverer dst_addr [start_mtu=64 [end_mtu=1500] ]"
+	exit 1
+fi
+
+PLATFORM=`uname -s`
+
+if test $PLATFORM = "FreeBSD"
+then
+	UID=`id | sed 's/uid=\([0-9]*\)(.*/\1/'`
+	if [ $UID -ne 0 ]
+	then
+		echo "Error: should be run by only super-user on FreeBSD"
+		exit 1
+	fi 
+fi
+
+DST=$1
+
+ST=1280
+if test $# -gt 1
+then
+	ST=$2
+fi
+
+ED=1500
+if test $# -gt 2
+then
+	ED=$3
+fi
+
+x=`expr $ST + $ED`
+MTU=`expr $x / 2`
+LAST_MTU=$MTU
+
+while [ $MTU -ne $ED ];
+do
+	ping -D -s $MTU -t 1 -W 1 -c 1 $DST > /dev/null 2>&1
+	if test $? -eq 0
+	then
+		echo "$MTU OK"
+		ST=$MTU
+	else
+		echo "$MTU NG"
+		ED=$MTU
+	fi
+	LAST_MTU=$MTU
+	x=`expr $ST + $ED`
+	MTU=`expr $x / 2`
+	# MTU should be even number...
+	if test $MTU -eq $LAST_MTU
+	then
+		echo "MTU: $MTU"
+		exit
+	fi
+done
+

@@ -38,7 +38,9 @@ LAST_MTU=$MTU
 
 while [ $MTU -ne $ED ];
 do
-	ping -D -s $MTU -t 1 -W 1 -c 1 $DST > /dev/null 2>&1
+	# IP header 20 bytes + ICMP header 8 bytes
+	SIZE=`expr $MTU - 28`
+	ping -D -s $SIZE -t 1 -W 1 -c 1 $DST > /dev/null 2>&1
 	if test $? -eq 0
 	then
 		echo "$MTU OK"
